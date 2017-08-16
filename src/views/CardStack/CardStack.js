@@ -239,7 +239,7 @@ class CardStack extends Component {
     }
     const { navigation, position, layout, scene, scenes, mode } = this.props;
     const { index } = navigation.state;
-    const isVertical = mode === 'modal';
+    const isVertical = this._isModal();
 
     const responder = PanResponder.create({
       onPanResponderTerminate: () => {
@@ -372,12 +372,26 @@ class CardStack extends Component {
       </View>
     );
   }
+  
+  _isModal(): boolean {
+    const { index, mode, scene, scenes } = this.props;
+
+    // if the current scene index is not the last in the list
+    // considering current render is in context of back-navigation
+    // may be there is a better way to detect back navigation here?
+    const isBackNavigation = index < scenes.length - 1;
+
+    // when navigating back, we should ask modal mode from the scene we are leaving in order to match animation style
+    const animationDefinerScene = isBackNavigation ? scenes[scenes.length - 1] : scene;
+    const modeFromOptions = this._getScreenDetails(animationDefinerScene).options.mode;
+    return modeFromOptions === 'modal' || mode === 'modal';
+  }       
 
   _getHeaderMode(): HeaderMode {
     if (this.props.headerMode) {
       return this.props.headerMode;
     }
-    if (Platform.OS === 'android' || this.props.mode === 'modal') {
+    if (this._isModal() || Platform.OS === 'android' || this.props.mode === 'modal') {
       return 'screen';
     }
     return 'float';
@@ -421,7 +435,7 @@ class CardStack extends Component {
       this.props.transitionConfig,
       {},
       {},
-      isModal
+      this._isModal()
     );
   };
 
